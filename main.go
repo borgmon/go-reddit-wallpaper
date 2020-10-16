@@ -1,26 +1,18 @@
 package main
 
 import (
-	"encoding/json"
 	"log"
-	"net/http"
 
 	"github.com/reujab/wallpaper"
 )
 
 func main() {
-	client := &http.Client{}
-	req, err := http.NewRequest("GET", "https://www.reddit.com/r/wallpapers/top.json", nil)
-	req.Header.Set("User-Agent", "go-reddit-wallpaper/1.0")
-
-	res, err := client.Do(req)
+	res, err := GetReddit("r/wallpapers", "top")
 	if err != nil {
 		log.Fatalln(err)
 	}
-	defer res.Body.Close()
-	var result RedditPayload
-	json.NewDecoder(res.Body).Decode(&result)
-	err = wallpaper.SetFromURL(result.Data.Children[0].Data.Url)
+
+	err = wallpaper.SetFromURL(res.Data.Children[0].Data.Url)
 	if err != nil {
 		log.Fatalln(err)
 	}
