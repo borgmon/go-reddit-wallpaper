@@ -11,7 +11,7 @@ import (
 func main() {
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", "https://www.reddit.com/r/wallpapers/top.json", nil)
-	req.Header.Set("User-Agent", "Golang_Spider_Bot/3.0")
+	req.Header.Set("User-Agent", "go-reddit-wallpaper/1.0")
 
 	res, err := client.Do(req)
 	if err != nil {
