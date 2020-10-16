@@ -31,3 +31,4 @@ go get github.com/borgmon/go-reddit-wallpaper
 - unit tests (duh)
 - login and upvote
 - skip current
+- icon
