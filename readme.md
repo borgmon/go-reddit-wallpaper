@@ -21,12 +21,12 @@ go get github.com/borgmon/go-reddit-wallpaper
 
 # Todo
 
-- custom subreddit
-- set minimal size
-- set interval
-- set sorting method
-- auto run
-- UI
+- ~~custom subreddit~~
+- ~~set minimal size~~
+- ~~set interval~~
+- ~~set sorting method~~
+- ~~auto run~~
+- ~~UI~~
 - tray
 - unit tests (duh)
 - login and upvote

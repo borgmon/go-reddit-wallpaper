@@ -1,11 +1,14 @@
 package main
 
 import (
+	"errors"
+	"runtime"
 	"strconv"
 
 	"fyne.io/fyne"
 	"fyne.io/fyne/app"
 	"fyne.io/fyne/widget"
+	"github.com/ProtonMail/go-autostart"
 )
 
 var (
@@ -40,9 +43,22 @@ func main() {
 
 	autorunCheck := widget.NewCheck("autorun", func(toggle bool) {
 		MainApp.Preferences().SetBool("autorun", toggle)
-		// TODO: set cron job
+		_, file, _, ok := runtime.Caller(1)
+		if !ok {
+			ErrorPopup(errors.New("Autorun setup failed"))
+		}
+		autoStartApp := &autostart.App{
+			Name:        "go-reddit-wallpaper",
+			DisplayName: "Go Reddit WallPaper",
+			Exec:        []string{"bash", "-c", file + " >> ~/autostart.txt"},
+		}
+		if toggle {
+			autoStartApp.Enable()
+		} else {
+			autoStartApp.Disable()
+		}
 	})
-	autorunCheck.SetChecked(MainApp.Preferences().BoolWithFallback("autorun", true))
+	autorunCheck.SetChecked(MainApp.Preferences().BoolWithFallback("autorun", false))
 
 	SettingWindow.SetContent(widget.NewVBox(
 		widget.NewLabelWithStyle("Subreddits", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
@@ -55,7 +71,7 @@ func main() {
 		sortingSelect,
 		widget.NewLabelWithStyle("Select First Or Random", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
 		firstOrRandomSelect,
-		widget.NewLabelWithStyle("Auto Run", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
+		widget.NewLabelWithStyle("Auto Run (experimental)", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
 		autorunCheck,
 		widget.NewButton("run", func() {
 			Start()
