@@ -3,7 +3,6 @@ package main
 import (
 	"errors"
 	"fmt"
-	"log"
 	"math/rand"
 	"strconv"
 	"strings"
@@ -26,10 +25,13 @@ func Start() {
 	for body.image == "" {
 		res, err := GetReddit(subreddit, savedSorting)
 		if err != nil {
-			log.Fatalln(err)
+			ErrorPopup(err)
 		}
 		fmt.Println(res.Data.Children[0].Data.Name)
 		image, err := getImage(res)
+		if err != nil {
+			ErrorPopup(err)
+		}
 		if image != "" {
 			body.image = image
 			AfterId = ""
@@ -37,9 +39,9 @@ func Start() {
 
 	}
 
-	wallpaperErr := wallpaper.SetFromURL(body.image)
-	if wallpaperErr != nil {
-		log.Fatalln(wallpaperErr)
+	err := wallpaper.SetFromURL(body.image)
+	if err != nil {
+		ErrorPopup(err)
 	}
 
 }
@@ -63,12 +65,12 @@ func getImage(payload *RedditPayload) (string, error) {
 		minWidthStr := MainApp.Preferences().String("min_width")
 		minWidth, err := strconv.Atoi(minWidthStr)
 		if err != nil {
-			return "", err
+			ErrorPopup(err)
 		}
 		minHeightStr := MainApp.Preferences().String("min_height")
 		minHeight, err := strconv.Atoi(minHeightStr)
 		if err != nil {
-			return "", err
+			ErrorPopup(err)
 		}
 		width := v.Data.Preview.Images[0].Source.Width
 		height := v.Data.Preview.Images[0].Source.Height

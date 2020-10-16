@@ -12,6 +12,7 @@ var (
 	MainApp           = app.NewWithID("com.github.borgmon.go-reddit-wallpaper")
 	SettingWindow     = MainApp.NewWindow("Preference")
 	sorting           = []string{"top", "hot", "new"}
+	firstOrRandom     = []string{"first", "random"}
 	buildInSubreddits = "r/wallpaper,r/wallpapers"
 )
 
@@ -32,6 +33,11 @@ func main() {
 	})
 	sortingSelect.SetSelected(MainApp.Preferences().StringWithFallback("sorting", sorting[0]))
 
+	firstOrRandomSelect := widget.NewSelect(firstOrRandom, func(text string) {
+		MainApp.Preferences().SetString("first_or_random", text)
+	})
+	firstOrRandomSelect.SetSelected(MainApp.Preferences().StringWithFallback("first_or_random", firstOrRandom[0]))
+
 	autorunCheck := widget.NewCheck("autorun", func(toggle bool) {
 		MainApp.Preferences().SetBool("autorun", toggle)
 		// TODO: set cron job
@@ -47,6 +53,8 @@ func main() {
 		intervalEntry,
 		widget.NewLabelWithStyle("Sorting Method", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
 		sortingSelect,
+		widget.NewLabelWithStyle("Select First Or Random", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
+		firstOrRandomSelect,
 		widget.NewLabelWithStyle("Auto Run", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
 		autorunCheck,
 		widget.NewButton("run", func() {
@@ -64,7 +72,9 @@ func ErrorPopup(err error) {
 	w.Resize(fyne.NewSize(300, 200))
 	w.SetContent(widget.NewScrollContainer(widget.NewLabel(err.Error())))
 	w.Show()
-
+	w.SetOnClosed(func() {
+		MainApp.Quit()
+	})
 }
 
 func getStringInputBox(name, fallback string) *widget.Entry {
@@ -87,7 +97,10 @@ func getIntInputBox(name string, fallback int) *widget.Entry {
 	entry.SetText(text)
 	entry.SetPlaceHolder(text)
 	entry.OnChanged = func(text string) {
-		i, _ := strconv.Atoi(text)
+		i, err := strconv.Atoi(text)
+		if err != nil {
+			ErrorPopup(err)
+		}
 		MainApp.Preferences().SetInt(name, i)
 	}
 	return entry
