@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"log"
 	"runtime"
 	"strconv"
 
@@ -17,9 +18,17 @@ var (
 	sorting           = []string{"top", "hot", "new"}
 	firstOrRandom     = []string{"first", "random"}
 	buildInSubreddits = "r/wallpaper,r/wallpapers"
+	iconPath          = "./icon.png"
+	IconRecource      fyne.Resource
 )
 
 func main() {
+	IconRecource, err := fyne.LoadResourceFromPath(iconPath)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	MainApp.SetIcon(IconRecource)
+	SettingWindow.SetIcon(IconRecource)
 	SettingWindow.SetFixedSize(true)
 	SettingWindow.CenterOnScreen()
 
@@ -84,6 +93,7 @@ func main() {
 
 func ErrorPopup(err error) {
 	w := MainApp.NewWindow("Error")
+	w.SetIcon(IconRecource)
 	w.CenterOnScreen()
 	w.Resize(fyne.NewSize(300, 200))
 	w.SetContent(widget.NewScrollContainer(widget.NewLabel(err.Error())))
