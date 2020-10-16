@@ -20,6 +20,7 @@ type PayloadDataChild struct {
 type PayloadDataChildData struct {
 	Preview PayloadDataChildDataPreview
 	Url     string
+	Name    string
 }
 
 type PayloadDataChildDataPreview struct {
@@ -30,13 +31,21 @@ type PayloadDataChildDataPreviewImage struct {
 }
 
 type PayloadDataChildDataPreviewImageSource struct {
-	Width  int16
-	Height int16
+	Width  int
+	Height int
 }
+
+var AfterId = ""
 
 func GetReddit(subreddit, sort string) (result *RedditPayload, err error) {
 	client := &http.Client{}
-	req, err := http.NewRequest("GET", "https://www.reddit.com/"+subreddit+"/"+sort+".json", nil)
+	var url string
+	if AfterId == "" {
+		url = "https://www.reddit.com/" + subreddit + "/" + sort + ".json?count=25"
+	} else {
+		url = "https://www.reddit.com/" + subreddit + "/" + sort + ".json?count=25&after=" + AfterId
+	}
+	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -50,5 +59,6 @@ func GetReddit(subreddit, sort string) (result *RedditPayload, err error) {
 	if err != nil {
 		return nil, err
 	}
+	AfterId = result.Data.Children[0].Data.Name
 	return
 }

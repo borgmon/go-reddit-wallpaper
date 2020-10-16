@@ -7,20 +7,16 @@ import (
 	"fyne.io/fyne/widget"
 )
 
-const (
+var (
+	MainApp           = app.NewWithID("com.github.borgmon.go-reddit-wallpaper")
+	SettingWindow     = MainApp.NewWindow("Preference")
+	sorting           = []string{"top", "hot", "new"}
 	buildInSubreddits = "r/wallpaper,r/wallpapers"
 )
 
-var (
-	goApp         = app.NewWithID("com.github.borgmon.go-reddit-wallpaper")
-	settingWindow = goApp.NewWindow("Preference")
-	sorting       = []string{"top", "hot", "new"}
-)
-
 func main() {
-
-	settingWindow.SetFixedSize(true)
-	settingWindow.CenterOnScreen()
+	SettingWindow.SetFixedSize(true)
+	SettingWindow.CenterOnScreen()
 
 	subredditsEntry := getInputBox("subreddits", buildInSubreddits)
 
@@ -31,16 +27,16 @@ func main() {
 	intervalEntry := getInputBox("interval", "@daily")
 
 	sortingSelect := widget.NewSelect(sorting, func(text string) {
-		goApp.Preferences().SetString("sorting", text)
+		MainApp.Preferences().SetString("sorting", text)
 	})
-	sortingSelect.SetSelected(goApp.Preferences().StringWithFallback("sorting", sorting[0]))
+	sortingSelect.SetSelected(MainApp.Preferences().StringWithFallback("sorting", sorting[0]))
 
 	autorunCheck := widget.NewCheck("autorun", func(toggle bool) {
-		goApp.Preferences().SetBool("autorun", toggle)
+		MainApp.Preferences().SetBool("autorun", toggle)
 	})
-	autorunCheck.SetChecked(goApp.Preferences().BoolWithFallback("autorun", true))
+	autorunCheck.SetChecked(MainApp.Preferences().BoolWithFallback("autorun", true))
 
-	settingWindow.SetContent(fyne.NewContainerWithLayout(layout.NewVBoxLayout(),
+	SettingWindow.SetContent(fyne.NewContainerWithLayout(layout.NewVBoxLayout(),
 		widget.NewLabelWithStyle("Subreddits", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
 		subredditsEntry,
 		widget.NewLabelWithStyle("Minimum Size", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
@@ -51,16 +47,23 @@ func main() {
 		sortingSelect,
 		widget.NewLabelWithStyle("Auto Run", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
 		autorunCheck,
+		widget.NewButton("run", func() {
+			Start()
+		}),
 	))
-	settingWindow.ShowAndRun()
+
+	SettingWindow.ShowAndRun()
+
 }
 
 func getInputBox(name, fallback string) *widget.Entry {
 	entry := widget.NewEntry()
-	entry.SetText(goApp.Preferences().StringWithFallback(name, fallback))
+	value := MainApp.Preferences().StringWithFallback(name, fallback)
+	MainApp.Preferences().SetString(name, value)
+	entry.SetText(value)
 	entry.SetPlaceHolder(fallback)
 	entry.OnChanged = func(text string) {
-		goApp.Preferences().SetString(name, text)
+		MainApp.Preferences().SetString(name, text)
 	}
 	return entry
 }
