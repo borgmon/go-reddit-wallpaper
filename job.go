@@ -1,10 +1,10 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"math/rand"
 	"strings"
+	"time"
 	"unicode"
 
 	"github.com/reujab/wallpaper"
@@ -18,16 +18,44 @@ func Start() {
 	subreddit := randomElement(strings.Split(savedSubreddit, ","))
 
 	var body struct {
-		payload *RedditPayload
-		image   string
+		image string
 	}
+
+	randomIndex := 1
+	if MainApp.Preferences().String("first_or_random") == "random" {
+		rand.Seed(time.Now().UnixNano())
+		randomIndex = rand.Intn(50-1) + 1
+	}
+
 	for body.image == "" {
 		res, err := GetReddit(subreddit, savedSorting)
 		if err != nil {
 			ErrorPopup(err)
 		}
-		fmt.Println(res.Data.Children[0].Data.Name)
-		image, err := getImage(res)
+		image := ""
+		lastImage := ""
+		for _, v := range res.Data.Children {
+			if v.Data.Preview.Images == nil {
+				continue
+			}
+			fmt.Println(v.Data.Name)
+			fmt.Println(randomIndex)
+
+			result := getImage(&v)
+
+			if result != "" {
+				lastImage = result
+			}
+			randomIndex--
+			if randomIndex == 0 {
+				image = lastImage
+			}
+		}
+
+		if image == "" {
+			continue
+		}
+
 		if err != nil {
 			ErrorPopup(err)
 		}
@@ -59,20 +87,15 @@ func trimWhiteSpace(text string) string {
 	}, text)
 }
 
-func getImage(payload *RedditPayload) (string, error) {
-	for _, v := range payload.Data.Children {
-		if v.Data.Preview.Images == nil {
-			continue
-		}
-		minWidth := MainApp.Preferences().Int("min_width")
-		minHeight := MainApp.Preferences().Int("min_height")
-		width := v.Data.Preview.Images[0].Source.Width
-		height := v.Data.Preview.Images[0].Source.Height
-		if width >= minWidth && height >= minHeight {
-			return fixPreviewUrl(v.Data.Preview.Images[0].Source.Url), nil
-		}
+func getImage(v *PayloadDataChild) string {
+	minWidth := MainApp.Preferences().Int("min_width")
+	minHeight := MainApp.Preferences().Int("min_height")
+	width := v.Data.Preview.Images[0].Source.Width
+	height := v.Data.Preview.Images[0].Source.Height
+	if width >= minWidth && height >= minHeight {
+		return fixPreviewUrl(v.Data.Preview.Images[0].Source.Url)
 	}
-	return "", errors.New("No images met requirement")
+	return ""
 }
 
 func fixPreviewUrl(url string) string {
