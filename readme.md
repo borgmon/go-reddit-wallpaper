@@ -7,6 +7,14 @@ From top of the line subreddits:
 - r/wallpaper
 - r/wallpapers
 
+# Features
+
+- custom subreddit
+- minimal size
+- custom interval with cron syntax
+- sorting method
+- auto run
+
 # Installation
 
 ## Binary
@@ -21,14 +29,5 @@ go get github.com/borgmon/go-reddit-wallpaper
 
 # Todo
 
-- ~~custom subreddit~~
-- ~~set minimal size~~
-- ~~set interval~~
-- ~~set sorting method~~
-- ~~auto run~~
-- ~~UI~~
-- tray
 - unit tests (duh)
 - login and upvote
-- skip current
-- ~~icon~~
