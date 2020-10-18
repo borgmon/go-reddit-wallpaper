@@ -12,6 +12,7 @@ import (
 	"fyne.io/fyne/widget"
 	"github.com/ProtonMail/go-autostart"
 	"github.com/getlantern/systray"
+	"github.com/robfig/cron/v3"
 )
 
 var (
@@ -21,14 +22,17 @@ var (
 	buildInSubreddits = "r/wallpaper,r/wallpapers"
 	iconPath          = "./icon.png"
 	IconRecource      fyne.Resource
-	PrefWindowChannel = make(chan bool)
-	SettingWindow     fyne.Window
+	prefWindowChannel = make(chan bool)
+	settingWindow     fyne.Window
+	cronJob           = cron.New()
 )
 
 func main() {
+	cronJob.Start()
 	SetupGUI()
 	go systray.Run(onReady, onExit)
-	SettingWindow = BuildPrefWindow()
+	settingWindow = BuildPrefWindow()
+	go Start()
 	MainApp.Run()
 }
 
@@ -52,11 +56,33 @@ func BuildPrefWindow() fyne.Window {
 
 	subredditsEntry := getStringInputBox("subreddits", buildInSubreddits)
 
-	minWidthEntry := getStringInputBox("min_width", "1920")
-	minHeightEntry := getStringInputBox("min_height", "1080")
+	minSizeErrorLabel := widget.NewLabel("")
+
+	minWidthEntry := getIntInputBox("min_width", 1920, minSizeErrorLabel)
+	minHeightEntry := getIntInputBox("min_height", 1080, minSizeErrorLabel)
 	minSizeBox := widget.NewHBox(minWidthEntry, widget.NewLabel("x"), minHeightEntry)
 
-	intervalEntry := getStringInputBox("interval", "@daily")
+	// intervalEntry := getStringInputBox("interval", "@daily")
+	intervalEntryErrorLabel := widget.NewLabel("")
+	intervalEntry := widget.NewEntry()
+	value := MainApp.Preferences().StringWithFallback("interval", "@daily")
+	MainApp.Preferences().SetString("interval", value)
+	intervalEntry.SetText(value)
+	intervalEntry.SetPlaceHolder("@daily")
+
+	intervalEntry.OnChanged = func(text string) {
+		_, err := cron.ParseStandard(text)
+		if err != nil {
+			intervalEntryErrorLabel.SetText("Wrong Format")
+		} else {
+			intervalEntryErrorLabel.SetText("")
+			MainApp.Preferences().SetString("interval", text)
+			clearAllCronJobs()
+			cronJob.AddFunc(text, func() {
+				Start()
+			})
+		}
+	}
 
 	sortingSelect := widget.NewSelect(sorting, func(text string) {
 		MainApp.Preferences().SetString("sorting", text)
@@ -92,8 +118,10 @@ func BuildPrefWindow() fyne.Window {
 		subredditsEntry,
 		widget.NewLabelWithStyle("Minimum Size", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
 		minSizeBox,
+		minSizeErrorLabel,
 		widget.NewLabelWithStyle("Refresh Interval", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
 		intervalEntry,
+		intervalEntryErrorLabel,
 		widget.NewLabelWithStyle("Sorting Method", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
 		sortingSelect,
 		widget.NewLabelWithStyle("Select First Or Random", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
@@ -113,9 +141,9 @@ func ErrorPopup(err error) {
 	w.Resize(fyne.NewSize(300, 200))
 	w.SetContent(widget.NewScrollContainer(widget.NewLabel(err.Error())))
 	w.Show()
-	w.SetOnClosed(func() {
-		MainApp.Quit()
-	})
+	// w.SetOnClosed(func() {
+	// 	MainApp.Quit()
+	// })
 }
 
 func getStringInputBox(name, fallback string) *widget.Entry {
@@ -130,7 +158,7 @@ func getStringInputBox(name, fallback string) *widget.Entry {
 	return entry
 }
 
-func getIntInputBox(name string, fallback int) *widget.Entry {
+func getIntInputBox(name string, fallback int, errorMsg *widget.Label) *widget.Entry {
 	entry := widget.NewEntry()
 	value := MainApp.Preferences().IntWithFallback(name, fallback)
 	MainApp.Preferences().SetInt(name, value)
@@ -140,16 +168,17 @@ func getIntInputBox(name string, fallback int) *widget.Entry {
 	entry.OnChanged = func(text string) {
 		i, err := strconv.Atoi(text)
 		if err != nil {
-			ErrorPopup(err)
+			errorMsg.SetText("Not a number")
+		} else {
+			MainApp.Preferences().SetInt(name, i)
+			errorMsg.SetText("")
 		}
-		MainApp.Preferences().SetInt(name, i)
 	}
 	return entry
 }
 
 func onReady() {
-
-	// systray.SetIcon(IconRecource.Content())
+	systray.SetIcon(IconRecource.Content())
 	systray.SetTitle("Go Reddit WallPaper")
 	systray.SetTooltip("Go Reddit WallPaper")
 
@@ -164,14 +193,21 @@ func onReady() {
 
 		case <-mPref.ClickedCh:
 			fmt.Println("here")
-			SettingWindow.Show()
+			settingWindow.Show()
 
 		case <-mRefresh.ClickedCh:
-			Start()
+			go Start()
 		}
 
 	}
 }
 func onExit() {
 	MainApp.Quit()
+}
+
+func clearAllCronJobs() {
+	jobs := cronJob.Entries()
+	for _, job := range jobs {
+		cronJob.Remove(job.ID)
+	}
 }

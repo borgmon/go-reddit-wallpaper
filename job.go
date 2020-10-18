@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"math/rand"
-	"strconv"
 	"strings"
 	"unicode"
 
@@ -62,21 +61,20 @@ func trimWhiteSpace(text string) string {
 
 func getImage(payload *RedditPayload) (string, error) {
 	for _, v := range payload.Data.Children {
-		minWidthStr := MainApp.Preferences().String("min_width")
-		minWidth, err := strconv.Atoi(minWidthStr)
-		if err != nil {
-			ErrorPopup(err)
+		if v.Data.Preview.Images == nil {
+			continue
 		}
-		minHeightStr := MainApp.Preferences().String("min_height")
-		minHeight, err := strconv.Atoi(minHeightStr)
-		if err != nil {
-			ErrorPopup(err)
-		}
+		minWidth := MainApp.Preferences().Int("min_width")
+		minHeight := MainApp.Preferences().Int("min_height")
 		width := v.Data.Preview.Images[0].Source.Width
 		height := v.Data.Preview.Images[0].Source.Height
 		if width >= minWidth && height >= minHeight {
-			return v.Data.Url, nil
+			return fixPreviewUrl(v.Data.Preview.Images[0].Source.Url), nil
 		}
 	}
 	return "", errors.New("No images met requirement")
+}
+
+func fixPreviewUrl(url string) string {
+	return strings.Replace(url, "amp;", "", -1)
 }

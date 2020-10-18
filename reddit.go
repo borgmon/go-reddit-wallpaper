@@ -19,7 +19,6 @@ type PayloadDataChild struct {
 
 type PayloadDataChildData struct {
 	Preview PayloadDataChildDataPreview
-	Url     string
 	Name    string
 }
 
@@ -31,6 +30,7 @@ type PayloadDataChildDataPreviewImage struct {
 }
 
 type PayloadDataChildDataPreviewImageSource struct {
+	Url    string
 	Width  int
 	Height int
 }
