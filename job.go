@@ -49,6 +49,7 @@ func Start() {
 			randomIndex--
 			if randomIndex == 0 {
 				image = lastImage
+				break
 			}
 		}
 

@@ -62,7 +62,6 @@ func BuildPrefWindow() fyne.Window {
 	minHeightEntry := getIntInputBox("min_height", 1080, minSizeErrorLabel)
 	minSizeBox := widget.NewHBox(minWidthEntry, widget.NewLabel("x"), minHeightEntry)
 
-	// intervalEntry := getStringInputBox("interval", "@daily")
 	intervalEntryErrorLabel := widget.NewLabel("")
 	intervalEntry := widget.NewEntry()
 	value := MainApp.Preferences().StringWithFallback("interval", "@daily")
@@ -79,7 +78,7 @@ func BuildPrefWindow() fyne.Window {
 			MainApp.Preferences().SetString("interval", text)
 			clearAllCronJobs()
 			cronJob.AddFunc(text, func() {
-				Start()
+				go Start()
 			})
 		}
 	}
@@ -88,11 +87,19 @@ func BuildPrefWindow() fyne.Window {
 		MainApp.Preferences().SetString("sorting", text)
 	})
 	sortingSelect.SetSelected(MainApp.Preferences().StringWithFallback("sorting", sorting[0]))
+	sortingSelect.OnChanged = func(text string) {
+		MainApp.Preferences().SetString("sorting", text)
+		go Start()
+	}
 
 	firstOrRandomSelect := widget.NewSelect(firstOrRandom, func(text string) {
 		MainApp.Preferences().SetString("first_or_random", text)
 	})
 	firstOrRandomSelect.SetSelected(MainApp.Preferences().StringWithFallback("first_or_random", firstOrRandom[0]))
+	firstOrRandomSelect.OnChanged = func(text string) {
+		MainApp.Preferences().SetString("first_or_random", text)
+		go Start()
+	}
 
 	autorunCheck := widget.NewCheck("autorun", func(toggle bool) {
 		MainApp.Preferences().SetBool("autorun", toggle)
