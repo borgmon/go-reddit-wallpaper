@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"runtime"
 	"strconv"
@@ -10,27 +11,44 @@ import (
 	"fyne.io/fyne/app"
 	"fyne.io/fyne/widget"
 	"github.com/ProtonMail/go-autostart"
+	"github.com/getlantern/systray"
 )
 
 var (
 	MainApp           = app.NewWithID("com.github.borgmon.go-reddit-wallpaper")
-	SettingWindow     = MainApp.NewWindow("Preference")
 	sorting           = []string{"top", "hot", "new"}
 	firstOrRandom     = []string{"first", "random"}
 	buildInSubreddits = "r/wallpaper,r/wallpapers"
 	iconPath          = "./icon.png"
 	IconRecource      fyne.Resource
+	PrefWindowChannel = make(chan bool)
+	SettingWindow     fyne.Window
 )
 
 func main() {
-	IconRecource, err := fyne.LoadResourceFromPath(iconPath)
+	SetupGUI()
+	go systray.Run(onReady, onExit)
+	SettingWindow = BuildPrefWindow()
+	MainApp.Run()
+}
+
+func SetupGUI() {
+	iconRecource, err := fyne.LoadResourceFromPath(iconPath)
+	IconRecource = iconRecource
 	if err != nil {
 		log.Fatalln(err)
 	}
 	MainApp.SetIcon(IconRecource)
-	SettingWindow.SetIcon(IconRecource)
-	SettingWindow.SetFixedSize(true)
-	SettingWindow.CenterOnScreen()
+}
+
+func BuildPrefWindow() fyne.Window {
+	settingWindow := MainApp.NewWindow("Preferences")
+	settingWindow.SetIcon(IconRecource)
+	settingWindow.SetFixedSize(true)
+	settingWindow.CenterOnScreen()
+	settingWindow.SetCloseIntercept(func() {
+		settingWindow.Hide()
+	})
 
 	subredditsEntry := getStringInputBox("subreddits", buildInSubreddits)
 
@@ -69,7 +87,7 @@ func main() {
 	})
 	autorunCheck.SetChecked(MainApp.Preferences().BoolWithFallback("autorun", false))
 
-	SettingWindow.SetContent(widget.NewVBox(
+	settingWindow.SetContent(widget.NewVBox(
 		widget.NewLabelWithStyle("Subreddits", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
 		subredditsEntry,
 		widget.NewLabelWithStyle("Minimum Size", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
@@ -82,13 +100,10 @@ func main() {
 		firstOrRandomSelect,
 		widget.NewLabelWithStyle("Auto Run (experimental)", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
 		autorunCheck,
-		widget.NewButton("run", func() {
-			Start()
-		}),
 	))
 
-	SettingWindow.ShowAndRun()
-
+	settingWindow.Show()
+	return settingWindow
 }
 
 func ErrorPopup(err error) {
@@ -130,4 +145,33 @@ func getIntInputBox(name string, fallback int) *widget.Entry {
 		MainApp.Preferences().SetInt(name, i)
 	}
 	return entry
+}
+
+func onReady() {
+
+	// systray.SetIcon(IconRecource.Content())
+	systray.SetTitle("Go Reddit WallPaper")
+	systray.SetTooltip("Go Reddit WallPaper")
+
+	mQuit := systray.AddMenuItem("Quit", "Quit Go Reddit WallPaper")
+	mPref := systray.AddMenuItem("Preferences", "Change Preferences")
+	mRefresh := systray.AddMenuItem("Refresh Now", "Refresh Now!")
+	for {
+		select {
+		case <-mQuit.ClickedCh:
+			systray.Quit()
+			return
+
+		case <-mPref.ClickedCh:
+			fmt.Println("here")
+			SettingWindow.Show()
+
+		case <-mRefresh.ClickedCh:
+			Start()
+		}
+
+	}
+}
+func onExit() {
+	MainApp.Quit()
 }
