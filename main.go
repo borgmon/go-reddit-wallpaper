@@ -21,7 +21,9 @@ var (
 	firstOrRandom     = []string{"first", "random"}
 	buildInSubreddits = "r/wallpaper,r/wallpapers"
 	iconPath          = "./Icon.png"
+	iconIcoPath       = "./Icon.ico"
 	IconRecource      fyne.Resource
+	IconIcoRecource   fyne.Resource
 	prefWindowChannel = make(chan bool)
 	settingWindow     fyne.Window
 	cronJob           = cron.New()
@@ -43,6 +45,13 @@ func SetupGUI() {
 		log.Fatalln(err)
 	}
 	MainApp.SetIcon(IconRecource)
+	// windows tray icon issue walk around https://github.com/reujab/wallpaper/pull/15
+	iconIcoRecource, err := fyne.LoadResourceFromPath(iconIcoPath)
+	IconIcoRecource = iconIcoRecource
+	if err != nil {
+		log.Fatalln(err)
+	}
+
 }
 
 func BuildPrefWindow() fyne.Window {
@@ -185,7 +194,7 @@ func getIntInputBox(name string, fallback int, errorMsg *widget.Label) *widget.E
 }
 
 func onReady() {
-	systray.SetIcon(IconRecource.Content())
+	systray.SetIcon(IconIcoRecource.Content())
 	systray.SetTitle("Go Reddit WallPaper")
 	systray.SetTooltip("Go Reddit WallPaper")
 

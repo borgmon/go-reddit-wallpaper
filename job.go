@@ -6,7 +6,7 @@ import (
 	"time"
 	"unicode"
 
-	"github.com/reujab/wallpaper"
+	"github.com/kkyr/wallpaper"
 )
 
 func Start() {
