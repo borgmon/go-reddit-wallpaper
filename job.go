@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"math/rand"
 	"strings"
 	"time"
@@ -38,8 +37,6 @@ func Start() {
 			if v.Data.Preview.Images == nil {
 				continue
 			}
-			fmt.Println(v.Data.Name)
-			fmt.Println(randomIndex)
 
 			result := getImage(&v)
 

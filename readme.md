@@ -23,8 +23,19 @@ Just download from release page.
 
 ## Build from source
 
+### Build Linux
 ```bash
-go get github.com/borgmon/go-reddit-wallpaper
+fyne package -os linux
+```
+
+### Build Windows
+```bash
+fyne package -os windows 
+```
+
+### Build MacOS
+```bash
+fyne package -os darwin 
 ```
 
 # Todo

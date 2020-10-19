@@ -20,7 +20,7 @@ var (
 	sorting           = []string{"top", "hot", "new"}
 	firstOrRandom     = []string{"first", "random"}
 	buildInSubreddits = "r/wallpaper,r/wallpapers"
-	iconPath          = "./icon.png"
+	iconPath          = "./Icon.png"
 	IconRecource      fyne.Resource
 	prefWindowChannel = make(chan bool)
 	settingWindow     fyne.Window
