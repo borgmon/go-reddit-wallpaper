@@ -20,6 +20,10 @@ From top of the line subreddits:
 Download from [release page](https://github.com/borgmon/go-reddit-wallpaper/releases)
 
 # Build from source
+you will need fyne cmd package
+```bash
+go get fyne.io/fyne/cmd/fyne
+```
 
 ## Build Linux
 ```bash
