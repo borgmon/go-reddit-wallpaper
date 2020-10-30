@@ -3,7 +3,6 @@ package main
 import (
 	"errors"
 	"fmt"
-	"log"
 	"runtime"
 	"strconv"
 
@@ -20,13 +19,10 @@ var (
 	sorting           = []string{"top", "hot", "new"}
 	firstOrRandom     = []string{"first", "random"}
 	buildInSubreddits = "r/wallpaper,r/wallpapers"
-	iconPath          = "./Icon.png"
-	iconIcoPath       = "./Icon.ico"
-	IconRecource      fyne.Resource
-	IconIcoRecource   fyne.Resource
 	prefWindowChannel = make(chan bool)
 	settingWindow     fyne.Window
 	cronJob           = cron.New()
+	trayIconResource  []byte
 )
 
 func main() {
@@ -39,24 +35,18 @@ func main() {
 }
 
 func SetupGUI() {
-	iconRecource, err := fyne.LoadResourceFromPath(iconPath)
-	IconRecource = iconRecource
-	if err != nil {
-		log.Fatalln(err)
-	}
-	MainApp.SetIcon(IconRecource)
+	MainApp.SetIcon(PngIconRecource)
 	// windows tray icon issue walk around https://github.com/reujab/wallpaper/pull/15
-	iconIcoRecource, err := fyne.LoadResourceFromPath(iconIcoPath)
-	IconIcoRecource = iconIcoRecource
-	if err != nil {
-		log.Fatalln(err)
+	if runtime.GOOS == "windows" {
+		trayIconResource = IcoIconRecource.StaticContent
+	} else {
+		trayIconResource = PngIconRecource.StaticContent
 	}
-
 }
 
 func BuildPrefWindow() fyne.Window {
 	settingWindow := MainApp.NewWindow("Preferences")
-	settingWindow.SetIcon(IconRecource)
+	settingWindow.SetIcon(PngIconRecource)
 	settingWindow.SetFixedSize(true)
 	settingWindow.CenterOnScreen()
 	settingWindow.SetCloseIntercept(func() {
@@ -152,7 +142,7 @@ func BuildPrefWindow() fyne.Window {
 
 func ErrorPopup(err error) {
 	w := MainApp.NewWindow("Error")
-	w.SetIcon(IconRecource)
+	w.SetIcon(PngIconRecource)
 	w.CenterOnScreen()
 	w.Resize(fyne.NewSize(300, 200))
 	w.SetContent(widget.NewScrollContainer(widget.NewLabel(err.Error())))
@@ -194,7 +184,7 @@ func getIntInputBox(name string, fallback int, errorMsg *widget.Label) *widget.E
 }
 
 func onReady() {
-	systray.SetIcon(IconIcoRecource.Content())
+	systray.SetIcon(trayIconResource)
 	systray.SetTitle("Go Reddit WallPaper")
 	systray.SetTooltip("Go Reddit WallPaper")
 
