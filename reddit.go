@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 )
 
@@ -58,6 +59,9 @@ func GetReddit(subreddit, sort string) (result *RedditPayload, err error) {
 	err = json.NewDecoder(res.Body).Decode(&result)
 	if err != nil {
 		return nil, err
+	}
+	if len(result.Data.Children) == 0 {
+		return nil, errors.New("reach end of page limit")
 	}
 	AfterId = result.Data.Children[0].Data.Name
 	return

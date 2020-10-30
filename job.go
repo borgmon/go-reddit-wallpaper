@@ -9,6 +9,10 @@ import (
 	"github.com/kkyr/wallpaper"
 )
 
+const (
+	randomMax = 20
+)
+
 func Start() {
 	savedSubreddit := MainApp.Preferences().String("subreddits")
 	savedSubreddit = trimWhiteSpace(savedSubreddit)
@@ -23,14 +27,15 @@ func Start() {
 	randomIndex := 1
 	if MainApp.Preferences().String("first_or_random") == "random" {
 		rand.Seed(time.Now().UnixNano())
-		randomIndex = rand.Intn(50-1) + 1
+		randomIndex = rand.Intn(randomMax-1) + 1
 	}
 
 	for body.image == "" {
 		res, err := GetReddit(subreddit, savedSorting)
 		if err != nil {
-			ErrorPopup(err)
+			NewLogError(err)
 		}
+		NewLogInfo("Getting a new page from: " + subreddit + " , afterID=" + AfterId)
 		image := ""
 		lastImage := ""
 		for _, v := range res.Data.Children {
@@ -44,7 +49,7 @@ func Start() {
 				lastImage = result
 			}
 			randomIndex--
-			if randomIndex == 0 {
+			if randomIndex <= 0 {
 				image = lastImage
 				break
 			}
@@ -55,7 +60,7 @@ func Start() {
 		}
 
 		if err != nil {
-			ErrorPopup(err)
+			NewLogError(err)
 		}
 		if image != "" {
 			body.image = image
@@ -66,9 +71,10 @@ func Start() {
 
 	err := wallpaper.SetFromURL(body.image)
 	if err != nil {
-		ErrorPopup(err)
+		NewLogError(err)
+	} else {
+		NewLogInfo("Successfully set wallpaper: " + body.image)
 	}
-
 }
 
 func randomElement(ls []string) string {

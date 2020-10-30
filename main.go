@@ -2,9 +2,11 @@ package main
 
 import (
 	"errors"
-	"fmt"
 	"runtime"
 	"strconv"
+	"time"
+
+	"fyne.io/fyne/container"
 
 	"fyne.io/fyne"
 	"fyne.io/fyne/app"
@@ -20,6 +22,8 @@ var (
 	firstOrRandom     = []string{"first", "random"}
 	buildInSubreddits = "r/wallpaper,r/wallpapers"
 	prefWindowChannel = make(chan bool)
+	logWindow         fyne.Window
+	LogEntry          *widget.Entry
 	settingWindow     fyne.Window
 	cronJob           = cron.New()
 	trayIconResource  []byte
@@ -27,14 +31,15 @@ var (
 
 func main() {
 	cronJob.Start()
-	SetupGUI()
+	SetupIcon()
 	go systray.Run(onReady, onExit)
+	logWindow = BuildLogWindow()
 	settingWindow = BuildPrefWindow()
 	go Start()
 	MainApp.Run()
 }
 
-func SetupGUI() {
+func SetupIcon() {
 	MainApp.SetIcon(PngIconRecource)
 	// windows tray icon issue walk around https://github.com/reujab/wallpaper/pull/15
 	if runtime.GOOS == "windows" {
@@ -104,7 +109,7 @@ func BuildPrefWindow() fyne.Window {
 		MainApp.Preferences().SetBool("autorun", toggle)
 		_, file, _, ok := runtime.Caller(1)
 		if !ok {
-			ErrorPopup(errors.New("Autorun setup failed"))
+			NewLogError(errors.New("Autorun setup failed"))
 		}
 		autoStartApp := &autostart.App{
 			Name:        "go-reddit-wallpaper",
@@ -117,7 +122,8 @@ func BuildPrefWindow() fyne.Window {
 			autoStartApp.Disable()
 		}
 	})
-	autorunCheck.SetChecked(MainApp.Preferences().BoolWithFallback("autorun", false))
+	autorunEnabled := MainApp.Preferences().BoolWithFallback("autorun", false)
+	autorunCheck.SetChecked(autorunEnabled)
 
 	settingWindow.SetContent(widget.NewVBox(
 		widget.NewLabelWithStyle("Subreddits", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
@@ -136,20 +142,36 @@ func BuildPrefWindow() fyne.Window {
 		autorunCheck,
 	))
 
-	settingWindow.Show()
+	if autorunEnabled {
+		settingWindow.Show()
+	} else {
+		settingWindow.Hide()
+	}
+
 	return settingWindow
 }
+func BuildLogWindow() fyne.Window {
+	logWindow := MainApp.NewWindow("Logs")
+	logWindow.SetIcon(PngIconRecource)
+	logWindow.CenterOnScreen()
+	logWindow.Resize(fyne.NewSize(600, 800))
+	logWindow.SetCloseIntercept(func() {
+		logWindow.Hide()
+	})
 
-func ErrorPopup(err error) {
-	w := MainApp.NewWindow("Error")
-	w.SetIcon(PngIconRecource)
-	w.CenterOnScreen()
-	w.Resize(fyne.NewSize(300, 200))
-	w.SetContent(widget.NewScrollContainer(widget.NewLabel(err.Error())))
-	w.Show()
-	// w.SetOnClosed(func() {
-	// 	MainApp.Quit()
-	// })
+	LogEntry = widget.NewMultiLineEntry()
+	LogEntry.Disable()
+
+	logWindow.SetContent(container.NewScroll(LogEntry))
+
+	logWindow.Hide()
+	return logWindow
+}
+func NewLogError(err error) {
+	LogEntry.Text += time.Now().Format(time.RFC3339) + "\tERROR\t" + err.Error() + "\n"
+}
+func NewLogInfo(text string) {
+	LogEntry.Text += time.Now().Format(time.RFC3339) + "\tINFO\t" + text + "\n"
 }
 
 func getStringInputBox(name, fallback string) *widget.Entry {
@@ -189,6 +211,7 @@ func onReady() {
 	systray.SetTooltip("Go Reddit WallPaper")
 
 	mQuit := systray.AddMenuItem("Quit", "Quit Go Reddit WallPaper")
+	mLog := systray.AddMenuItem("Logs", "See Logs")
 	mPref := systray.AddMenuItem("Preferences", "Change Preferences")
 	mRefresh := systray.AddMenuItem("Refresh Now", "Refresh Now!")
 	for {
@@ -197,8 +220,10 @@ func onReady() {
 			systray.Quit()
 			return
 
+		case <-mLog.ClickedCh:
+			logWindow.Show()
+
 		case <-mPref.ClickedCh:
-			fmt.Println("here")
 			settingWindow.Show()
 
 		case <-mRefresh.ClickedCh:
