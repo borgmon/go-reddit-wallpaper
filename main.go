@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"os"
 	"runtime"
 	"strconv"
 	"time"
@@ -107,21 +108,21 @@ func BuildPrefWindow() fyne.Window {
 
 	autorunCheck := widget.NewCheck("autorun", func(toggle bool) {
 		MainApp.Preferences().SetBool("autorun", toggle)
-		_, file, _, ok := runtime.Caller(1)
-		if !ok {
-			NewLogError(errors.New("Autorun setup failed"))
-		} else {
-			autoStartApp := &autostart.App{
-				Name:        "go-reddit-wallpaper",
-				DisplayName: "Go Reddit WallPaper",
-				Exec:        []string{"bash", "-c", file + " >> ~/autostart.txt"},
-			}
-			if toggle {
-				autoStartApp.Enable()
-			} else {
-				autoStartApp.Disable()
-			}
+		err, exec := getAutorunExec()
+		if err != nil {
+			NewLogError(err)
 		}
+		autoStartApp := &autostart.App{
+			Name:        "go-reddit-wallpaper",
+			DisplayName: "Go Reddit WallPaper",
+			Exec:        exec,
+		}
+		if toggle {
+			autoStartApp.Enable()
+		} else {
+			autoStartApp.Disable()
+		}
+
 	})
 	autorunEnabled := MainApp.Preferences().BoolWithFallback("autorun", false)
 	autorunCheck.SetChecked(autorunEnabled)
@@ -241,5 +242,19 @@ func clearAllCronJobs() {
 	jobs := cronJob.Entries()
 	for _, job := range jobs {
 		cronJob.Remove(job.ID)
+	}
+}
+
+func getAutorunExec() (error, []string) {
+	dir, err := os.Executable()
+	if err != nil {
+		return err, nil
+	}
+	if runtime.GOOS == "windows" {
+		return nil, []string{dir}
+	} else if runtime.GOOS == "linux" {
+		return nil, []string{"bash", "-c", dir}
+	} else {
+		return errors.New("Autorun not implemented"), nil
 	}
 }
