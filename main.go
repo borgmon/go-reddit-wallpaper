@@ -2,15 +2,15 @@ package main
 
 import (
 	"errors"
+	"io/ioutil"
 	"os"
 	"runtime"
 	"strconv"
 	"time"
 
-	"fyne.io/fyne/container"
-
 	"fyne.io/fyne"
 	"fyne.io/fyne/app"
+	"fyne.io/fyne/container"
 	"fyne.io/fyne/widget"
 	"github.com/ProtonMail/go-autostart"
 	"github.com/getlantern/systray"
@@ -254,6 +254,13 @@ func getAutorunExec() (error, []string) {
 		return nil, []string{dir}
 	} else if runtime.GOOS == "linux" {
 		return nil, []string{"bash", "-c", dir}
+	} else if runtime.GOOS == "darwin" {
+		fileName := "~/Library/LaunchAgents/me.borgmon.go-reddit-wallpaper.plist"
+		err := ioutil.WriteFile(fileName, PlistRecource.StaticContent, 0644)
+		if err != nil {
+			return err, nil
+		}
+		return nil, []string{"launchctl load " + fileName}
 	} else {
 		return errors.New("Autorun not implemented"), nil
 	}
