@@ -143,9 +143,9 @@ func BuildPrefWindow() fyne.Window {
 	))
 
 	if autorunEnabled {
-		settingWindow.Show()
-	} else {
 		settingWindow.Hide()
+	} else {
+		settingWindow.Show()
 	}
 
 	return settingWindow
