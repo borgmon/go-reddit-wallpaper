@@ -2,10 +2,16 @@
 
 A cross-platform software that changes your wallpaper everyday (with go!)
 
-From top of the line subreddits:
+From top of the line subreddits and add your own:
 
 - r/wallpaper
 - r/wallpapers
+- ( ͡° ͜ʖ ͡°)
+
+# Screenshots
+![linux](screenshots/linux.png)
+![macos](screenshots/macos.png)
+![windows](screenshots/windows.png)
 
 # Features
 
