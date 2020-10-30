@@ -110,16 +110,17 @@ func BuildPrefWindow() fyne.Window {
 		_, file, _, ok := runtime.Caller(1)
 		if !ok {
 			NewLogError(errors.New("Autorun setup failed"))
-		}
-		autoStartApp := &autostart.App{
-			Name:        "go-reddit-wallpaper",
-			DisplayName: "Go Reddit WallPaper",
-			Exec:        []string{"bash", "-c", file + " >> ~/autostart.txt"},
-		}
-		if toggle {
-			autoStartApp.Enable()
 		} else {
-			autoStartApp.Disable()
+			autoStartApp := &autostart.App{
+				Name:        "go-reddit-wallpaper",
+				DisplayName: "Go Reddit WallPaper",
+				Exec:        []string{"bash", "-c", file + " >> ~/autostart.txt"},
+			}
+			if toggle {
+				autoStartApp.Enable()
+			} else {
+				autoStartApp.Disable()
+			}
 		}
 	})
 	autorunEnabled := MainApp.Preferences().BoolWithFallback("autorun", false)

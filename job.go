@@ -34,6 +34,7 @@ func Start() {
 		res, err := GetReddit(subreddit, savedSorting)
 		if err != nil {
 			NewLogError(err)
+			return
 		}
 		NewLogInfo("Getting a new page from: " + subreddit + " , afterID=" + AfterId)
 		image := ""
@@ -61,6 +62,7 @@ func Start() {
 
 		if err != nil {
 			NewLogError(err)
+			return
 		}
 		if image != "" {
 			body.image = image
