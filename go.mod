@@ -5,6 +5,7 @@ go 1.15
 require (
 	fyne.io/fyne v1.3.4-0.20201015182014-ca14250d0fa3
 	github.com/ProtonMail/go-autostart v0.0.0-20181114175602-c5272053443a
+	github.com/disintegration/imaging v1.6.2
 	github.com/getlantern/systray v1.0.4
 	github.com/kkyr/wallpaper v0.0.0-20200608191419-47f936e68dd3
 	github.com/robfig/cron v1.2.0

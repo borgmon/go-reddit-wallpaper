@@ -1,10 +1,7 @@
 package main
 
 import (
-	"errors"
-	"io/ioutil"
 	"net/url"
-	"os"
 	"runtime"
 	"strconv"
 	"time"
@@ -13,9 +10,6 @@ import (
 	"fyne.io/fyne/app"
 	"fyne.io/fyne/container"
 	"fyne.io/fyne/widget"
-	"github.com/ProtonMail/go-autostart"
-	"github.com/getlantern/systray"
-	"github.com/robfig/cron/v3"
 )
 
 const (
@@ -32,14 +26,14 @@ var (
 	logWindow         fyne.Window
 	LogEntry          *widget.Entry
 	settingWindow     fyne.Window
-	cronJob           = cron.New()
+	cronJob           = newCron()
 	trayIconResource  []byte
 )
 
 func main() {
 	cronJob.Start()
 	SetupIcon()
-	go systray.Run(onReady, onExit)
+	go startTray()
 	logWindow = BuildLogWindow()
 	settingWindow = BuildPrefWindow()
 	go Start()
@@ -76,9 +70,7 @@ func BuildPrefWindow() fyne.Window {
 	intervalEntryErrorLabel := widget.NewLabel("")
 	intervalEntry := widget.NewEntry()
 	url, err := url.Parse("https://godoc.org/github.com/robfig/cron")
-	if err != nil {
-		NewLogError(err)
-	}
+	checkError(err)
 	intervalLink := widget.NewHyperlink("See example", url)
 	value := MainApp.Preferences().StringWithFallback("interval", "@daily")
 	MainApp.Preferences().SetString("interval", value)
@@ -86,16 +78,14 @@ func BuildPrefWindow() fyne.Window {
 	intervalEntry.SetPlaceHolder("@daily")
 
 	intervalEntry.OnChanged = func(text string) {
-		_, err := cron.ParseStandard(text)
+		_, err := parseCron(text)
 		if err != nil {
 			intervalEntryErrorLabel.SetText("Wrong Format")
 		} else {
 			intervalEntryErrorLabel.SetText("")
 			MainApp.Preferences().SetString("interval", text)
-			clearAllCronJobs()
-			cronJob.AddFunc(text, func() {
-				go Start()
-			})
+			_, err := clearAndSetCron(text)
+			checkError(err)
 		}
 	}
 
@@ -119,15 +109,9 @@ func BuildPrefWindow() fyne.Window {
 
 	autorunCheck := widget.NewCheck("autorun", func(toggle bool) {
 		MainApp.Preferences().SetBool("autorun", toggle)
-		err, exec := getAutorunExec()
-		if err != nil {
-			NewLogError(err)
-		}
-		autoStartApp := &autostart.App{
-			Name:        "go-reddit-wallpaper",
-			DisplayName: "Go Reddit WallPaper",
-			Exec:        exec,
-		}
+
+		autoStartApp, err := newAutoRun()
+		checkError(err)
 		if toggle {
 			autoStartApp.Enable()
 		} else {
@@ -177,15 +161,9 @@ func BuildPrefWindow() fyne.Window {
 		widget.NewVBox(widget.NewLabel("version: "+version)),
 		widget.NewVBox(
 			widget.NewButtonWithIcon("Github", GithubPngResource, func() {
-				url, err := url.Parse("https://github.com/borgmon/go-reddit-wallpaper")
-				if err != nil {
-					NewLogError(err)
-					return
-				}
+				url, _ := url.Parse("https://github.com/borgmon/go-reddit-wallpaper")
 				err = fyne.CurrentApp().OpenURL(url)
-				if err != nil {
-					NewLogError(err)
-				}
+				checkError(err)
 			}),
 		),
 	))
@@ -253,61 +231,8 @@ func getIntInputBox(name string, fallback int, errorMsg *widget.Label) *widget.E
 	return entry
 }
 
-func onReady() {
-	systray.SetIcon(trayIconResource)
-	systray.SetTitle("Go Reddit WallPaper")
-	systray.SetTooltip("Go Reddit WallPaper")
-
-	mQuit := systray.AddMenuItem("Quit", "Quit Go Reddit WallPaper")
-	mLog := systray.AddMenuItem("Logs", "See Logs")
-	mPref := systray.AddMenuItem("Preferences", "Change Preferences")
-	mRefresh := systray.AddMenuItem("Refresh Now", "Refresh Now!")
-	for {
-		select {
-		case <-mQuit.ClickedCh:
-			systray.Quit()
-			return
-
-		case <-mLog.ClickedCh:
-			logWindow.Show()
-
-		case <-mPref.ClickedCh:
-			settingWindow.Show()
-
-		case <-mRefresh.ClickedCh:
-			go Start()
-		}
-
-	}
-}
-func onExit() {
-	MainApp.Quit()
-}
-
-func clearAllCronJobs() {
-	jobs := cronJob.Entries()
-	for _, job := range jobs {
-		cronJob.Remove(job.ID)
-	}
-}
-
-func getAutorunExec() (error, []string) {
-	dir, err := os.Executable()
+func checkError(err error) {
 	if err != nil {
-		return err, nil
-	}
-	if runtime.GOOS == "windows" {
-		return nil, []string{dir}
-	} else if runtime.GOOS == "linux" {
-		return nil, []string{"bash", "-c", dir}
-	} else if runtime.GOOS == "darwin" {
-		fileName := "~/Library/LaunchAgents/me.borgmon.go-reddit-wallpaper.plist"
-		err := ioutil.WriteFile(fileName, PlistResource.StaticContent, 0644)
-		if err != nil {
-			return err, nil
-		}
-		return nil, []string{"launchctl load " + fileName}
-	} else {
-		return errors.New("Autorun not implemented"), nil
+		NewLogError(err)
 	}
 }
