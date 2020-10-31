@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"io/ioutil"
+	"net/url"
 	"os"
 	"runtime"
 	"strconv"
@@ -15,6 +16,11 @@ import (
 	"github.com/ProtonMail/go-autostart"
 	"github.com/getlantern/systray"
 	"github.com/robfig/cron/v3"
+)
+
+const (
+	githubLink = "https://github.com/borgmon/go-reddit-wallpaper"
+	version    = "v1.3"
 )
 
 var (
@@ -41,18 +47,18 @@ func main() {
 }
 
 func SetupIcon() {
-	MainApp.SetIcon(PngIconRecource)
+	MainApp.SetIcon(PngIconResource)
 	// windows tray icon issue walk around https://github.com/reujab/wallpaper/pull/15
 	if runtime.GOOS == "windows" {
-		trayIconResource = IcoIconRecource.StaticContent
+		trayIconResource = IcoIconResource.StaticContent
 	} else {
-		trayIconResource = PngIconRecource.StaticContent
+		trayIconResource = PngIconResource.StaticContent
 	}
 }
 
 func BuildPrefWindow() fyne.Window {
 	settingWindow := MainApp.NewWindow("Preferences")
-	settingWindow.SetIcon(PngIconRecource)
+	settingWindow.SetIcon(PngIconResource)
 	settingWindow.SetFixedSize(true)
 	settingWindow.CenterOnScreen()
 	settingWindow.SetCloseIntercept(func() {
@@ -69,6 +75,11 @@ func BuildPrefWindow() fyne.Window {
 
 	intervalEntryErrorLabel := widget.NewLabel("")
 	intervalEntry := widget.NewEntry()
+	url, err := url.Parse("https://godoc.org/github.com/robfig/cron")
+	if err != nil {
+		NewLogError(err)
+	}
+	intervalLink := widget.NewHyperlink("See example", url)
 	value := MainApp.Preferences().StringWithFallback("interval", "@daily")
 	MainApp.Preferences().SetString("interval", value)
 	intervalEntry.SetText(value)
@@ -127,21 +138,56 @@ func BuildPrefWindow() fyne.Window {
 	autorunEnabled := MainApp.Preferences().BoolWithFallback("autorun", false)
 	autorunCheck.SetChecked(autorunEnabled)
 
-	settingWindow.SetContent(widget.NewVBox(
-		widget.NewLabelWithStyle("Subreddits", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
-		subredditsEntry,
-		widget.NewLabelWithStyle("Minimum Size", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
-		minSizeBox,
-		minSizeErrorLabel,
-		widget.NewLabelWithStyle("Refresh Interval", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
-		intervalEntry,
-		intervalEntryErrorLabel,
-		widget.NewLabelWithStyle("Sorting Method", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
-		sortingSelect,
-		widget.NewLabelWithStyle("Select First Or Random", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
-		firstOrRandomSelect,
-		widget.NewLabelWithStyle("Auto Run (experimental)", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
-		autorunCheck,
+	settingWindow.SetContent(container.NewAdaptiveGrid(2,
+		widget.NewVBox(widget.NewLabel("Subreddits")),
+		widget.NewVBox(
+			subredditsEntry,
+		),
+
+		widget.NewVBox(widget.NewLabel("Minimum Size")),
+		widget.NewVBox(
+			minSizeBox,
+			minSizeErrorLabel,
+		),
+
+		widget.NewVBox(
+			widget.NewLabel("Refresh Interval"),
+			intervalLink,
+		),
+		widget.NewVBox(
+			intervalEntry,
+			intervalEntryErrorLabel,
+		),
+
+		widget.NewVBox(widget.NewLabel("Sorting Method")),
+		widget.NewVBox(
+			sortingSelect,
+		),
+
+		widget.NewVBox(widget.NewLabel("Select First Or Random")),
+		widget.NewVBox(
+			firstOrRandomSelect,
+		),
+
+		widget.NewVBox(widget.NewLabel("Auto Run")),
+		widget.NewVBox(
+			autorunCheck,
+		),
+
+		widget.NewVBox(widget.NewLabel("version: "+version)),
+		widget.NewVBox(
+			widget.NewButtonWithIcon("Github", GithubPngResource, func() {
+				url, err := url.Parse("https://github.com/borgmon/go-reddit-wallpaper")
+				if err != nil {
+					NewLogError(err)
+					return
+				}
+				err = fyne.CurrentApp().OpenURL(url)
+				if err != nil {
+					NewLogError(err)
+				}
+			}),
+		),
 	))
 
 	if autorunEnabled {
@@ -154,7 +200,7 @@ func BuildPrefWindow() fyne.Window {
 }
 func BuildLogWindow() fyne.Window {
 	logWindow := MainApp.NewWindow("Logs")
-	logWindow.SetIcon(PngIconRecource)
+	logWindow.SetIcon(PngIconResource)
 	logWindow.CenterOnScreen()
 	logWindow.Resize(fyne.NewSize(600, 800))
 	logWindow.SetCloseIntercept(func() {
@@ -256,7 +302,7 @@ func getAutorunExec() (error, []string) {
 		return nil, []string{"bash", "-c", dir}
 	} else if runtime.GOOS == "darwin" {
 		fileName := "~/Library/LaunchAgents/me.borgmon.go-reddit-wallpaper.plist"
-		err := ioutil.WriteFile(fileName, PlistRecource.StaticContent, 0644)
+		err := ioutil.WriteFile(fileName, PlistResource.StaticContent, 0644)
 		if err != nil {
 			return err, nil
 		}
