@@ -159,7 +159,7 @@ func buildPrefWindow() fyne.Window {
 
 		widget.NewVBox(
 			widget.NewLabel("Deep Scan"),
-			widget.NewLabel("(download pictures to check dimensions)"),
+			widget.NewLabel("(download picture to check dimensions)"),
 		),
 		widget.NewVBox(
 			deepscanCheck,

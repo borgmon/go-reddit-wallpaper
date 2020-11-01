@@ -5,19 +5,20 @@ A cross-platform software that changes your wallpaper everyday (with go!)
 From top of the line subreddits and add your own:
 
 - r/wallpaper
-- r/wallpapers
+- r/art
+- r/aww
 - ( ͡° ͜ʖ ͡°)
 
 # Screenshots
 
-![linux](screenshots/linux.png)
-![macos](screenshots/macos.png)
-![windows](screenshots/windows.png)
+![screenshot](screenshots/screenshot.png)
 
 # Features
 
 - custom subreddit
-- minimal size
+- minimum image size
+- only use dark images
+- dim bright images
 - custom interval with cron syntax
 - sorting method
 - auto run
