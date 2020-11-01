@@ -21,7 +21,7 @@ var (
 	mainApp           = app.NewWithID("com.github.borgmon.go-reddit-wallpaper")
 	sorting           = []string{"top", "hot", "new"}
 	firstOrRandom     = []string{"first", "random"}
-	preferDarker      = []string{"none", "only dark images"}
+	preferDarker      = []string{"none", "only dark images", "dim images"}
 	buildInSubreddits = "r/wallpaper,r/wallpapers"
 	logWindow         fyne.Window
 	logEntry          *widget.Entry
@@ -159,7 +159,7 @@ func buildPrefWindow() fyne.Window {
 
 		widget.NewVBox(
 			widget.NewLabel("Deep Scan"),
-			widget.NewLabel("(download picture to check dimensions)"),
+			widget.NewLabel("(download pictures to check dimensions)"),
 		),
 		widget.NewVBox(
 			deepscanCheck,

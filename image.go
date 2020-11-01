@@ -10,7 +10,7 @@ import (
 
 const (
 	threshold = .45
-	dimLevel  = -20
+	dimLevel  = -10
 )
 
 // calculate brightness using RMS of grayscaled picture
@@ -35,7 +35,7 @@ func checkDarkImage(img []byte) (bool, error) {
 	return darkScale < threshold, nil
 }
 
-func DimImage(img []byte) ([]byte, error) {
+func dimImage(img []byte) ([]byte, error) {
 	decodedImage, err := imaging.Decode(bytes.NewReader(img))
 	if err != nil {
 		return nil, err
