@@ -21,6 +21,7 @@ type PayloadDataChild struct {
 type PayloadDataChildData struct {
 	Preview PayloadDataChildDataPreview
 	Name    string
+	Url     string
 }
 
 type PayloadDataChildDataPreview struct {
@@ -36,33 +37,31 @@ type PayloadDataChildDataPreviewImageSource struct {
 	Height int
 }
 
-var AfterId = ""
-
-func GetReddit(subreddit, sort string) (result *RedditPayload, err error) {
+func getReddit(subreddit, sort string, afterID string) (result *RedditPayload, newAfterID string, err error) {
 	client := &http.Client{}
 	var url string
-	if AfterId == "" {
+	if afterID == "" {
 		url = "https://www.reddit.com/" + subreddit + "/" + sort + ".json?count=25"
 	} else {
-		url = "https://www.reddit.com/" + subreddit + "/" + sort + ".json?count=25&after=" + AfterId
+		url = "https://www.reddit.com/" + subreddit + "/" + sort + ".json?count=25&after=" + afterID
 	}
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
-	req.Header.Set("User-Agent", "go-reddit-wallpaper/1.0")
+	req.Header.Set("User-Agent", "go-reddit-wallpaper/"+version)
 	res, err := client.Do(req)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 	defer res.Body.Close()
 	err = json.NewDecoder(res.Body).Decode(&result)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 	if len(result.Data.Children) == 0 {
-		return nil, errors.New("reach end of page limit")
+		return nil, "", errors.New("reach end of page limit")
 	}
-	AfterId = result.Data.Children[0].Data.Name
+	newAfterID = result.Data.Children[0].Data.Name
 	return
 }

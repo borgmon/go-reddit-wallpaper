@@ -13,32 +13,7 @@ const (
 	dimLevel  = -20
 )
 
-// func main() {
-// 	// res, err := http.Get("https://coolbackgrounds.io/images/backgrounds/white/pure-white-background-85a2a7fd.jpg")
-// 	// if err != nil {
-// 	// 	panic(err)
-// 	// }
-// 	// defer res.Body.Close()
-// 	// d, err := ioutil.ReadAll(res.Body)
-
-// 	src, err := imaging.Open("w.png")
-// 	if err != nil {
-// 		panic(err)
-// 	}
-// 	newImage := imaging.Grayscale(src)
-// 	// 0 0 0 0
-// 	var sum int
-// 	for i, v := range newImage.Pix {
-// 		if (i+1)%4 == 0 {
-// 			sum += int(v) * int(v)
-// 		}
-// 	}
-// 	a := sum / (newImage.Rect.Max.X * newImage.Rect.Max.Y)
-
-// 	result := math.Sqrt(float64(a))
-// 	fmt.Println(result)
-// }
-
+// calculate brightness using RMS of grayscaled picture
 func CheckDarkImage(img []byte) (bool, error) {
 	decodedImage, err := imaging.Decode(bytes.NewReader(img))
 	if err != nil {
@@ -47,7 +22,7 @@ func CheckDarkImage(img []byte) (bool, error) {
 	newImage := imaging.Grayscale(decodedImage)
 	var sum int
 	for i, v := range newImage.Pix {
-		if (i+1)%4 == 0 {
+		if i%4 == 0 {
 			sum += int(v) * int(v)
 		}
 	}
@@ -73,4 +48,12 @@ func DimImage(img []byte) ([]byte, error) {
 		log.Fatal(err)
 	}
 	return buf.Bytes(), nil
+}
+
+func getDimensions(img []byte) (int, int, error) {
+	decodedImage, err := imaging.Decode(bytes.NewReader(img))
+	if err != nil {
+		return 0, 0, err
+	}
+	return decodedImage.Bounds().Dx(), decodedImage.Bounds().Dy(), nil
 }

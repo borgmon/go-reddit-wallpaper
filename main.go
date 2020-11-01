@@ -21,8 +21,8 @@ var (
 	MainApp           = app.NewWithID("com.github.borgmon.go-reddit-wallpaper")
 	sorting           = []string{"top", "hot", "new"}
 	firstOrRandom     = []string{"first", "random"}
+	preferDarker      = []string{"none", "only dark images"}
 	buildInSubreddits = "r/wallpaper,r/wallpapers"
-	prefWindowChannel = make(chan bool)
 	logWindow         fyne.Window
 	LogEntry          *widget.Entry
 	settingWindow     fyne.Window
@@ -70,7 +70,7 @@ func BuildPrefWindow() fyne.Window {
 	intervalEntryErrorLabel := widget.NewLabel("")
 	intervalEntry := widget.NewEntry()
 	url, err := url.Parse("https://godoc.org/github.com/robfig/cron")
-	checkError(err)
+	checkError("parse cron doc error", err)
 	intervalLink := widget.NewHyperlink("See example", url)
 	value := MainApp.Preferences().StringWithFallback("interval", "@daily")
 	MainApp.Preferences().SetString("interval", value)
@@ -85,33 +85,21 @@ func BuildPrefWindow() fyne.Window {
 			intervalEntryErrorLabel.SetText("")
 			MainApp.Preferences().SetString("interval", text)
 			_, err := clearAndSetCron(text)
-			checkError(err)
+			checkError("set cron failed", err)
 		}
 	}
 
-	sortingSelect := widget.NewSelect(sorting, func(text string) {
-		MainApp.Preferences().SetString("sorting", text)
-	})
-	sortingSelect.SetSelected(MainApp.Preferences().StringWithFallback("sorting", sorting[0]))
-	sortingSelect.OnChanged = func(text string) {
-		MainApp.Preferences().SetString("sorting", text)
-		go Start()
-	}
+	sortingSelect := getSelect("sorting", sorting)
 
-	firstOrRandomSelect := widget.NewSelect(firstOrRandom, func(text string) {
-		MainApp.Preferences().SetString("first_or_random", text)
-	})
-	firstOrRandomSelect.SetSelected(MainApp.Preferences().StringWithFallback("first_or_random", firstOrRandom[0]))
-	firstOrRandomSelect.OnChanged = func(text string) {
-		MainApp.Preferences().SetString("first_or_random", text)
-		go Start()
-	}
+	firstOrRandomSelect := getSelect("first_or_random", firstOrRandom)
+
+	perferDarkerSelect := getSelect("prefer_darker", preferDarker)
 
 	autorunCheck := widget.NewCheck("autorun", func(toggle bool) {
 		MainApp.Preferences().SetBool("autorun", toggle)
 
 		autoStartApp, err := newAutoRun()
-		checkError(err)
+		checkError("get autostart app failed", err)
 		if toggle {
 			autoStartApp.Enable()
 		} else {
@@ -121,6 +109,12 @@ func BuildPrefWindow() fyne.Window {
 	})
 	autorunEnabled := MainApp.Preferences().BoolWithFallback("autorun", false)
 	autorunCheck.SetChecked(autorunEnabled)
+
+	deepscanCheck := widget.NewCheck("deepscan", func(toggle bool) {
+		MainApp.Preferences().SetBool("deepscan", toggle)
+	})
+	deepscanEnabled := MainApp.Preferences().BoolWithFallback("deepscan", false)
+	deepscanCheck.SetChecked(deepscanEnabled)
 
 	settingWindow.SetContent(container.NewAdaptiveGrid(2,
 		widget.NewVBox(widget.NewLabel("Subreddits")),
@@ -153,9 +147,22 @@ func BuildPrefWindow() fyne.Window {
 			firstOrRandomSelect,
 		),
 
+		widget.NewVBox(widget.NewLabel("Prefer Darker")),
+		widget.NewVBox(
+			perferDarkerSelect,
+		),
+
 		widget.NewVBox(widget.NewLabel("Auto Run")),
 		widget.NewVBox(
 			autorunCheck,
+		),
+
+		widget.NewVBox(
+			widget.NewLabel("Deep Scan"),
+			widget.NewLabel("(download picture to check dimensions)"),
+		),
+		widget.NewVBox(
+			deepscanCheck,
 		),
 
 		widget.NewVBox(widget.NewLabel("version: "+version)),
@@ -163,7 +170,7 @@ func BuildPrefWindow() fyne.Window {
 			widget.NewButtonWithIcon("Github", GithubPngResource, func() {
 				url, _ := url.Parse("https://github.com/borgmon/go-reddit-wallpaper")
 				err = fyne.CurrentApp().OpenURL(url)
-				checkError(err)
+				checkError("open github url failed", err)
 			}),
 		),
 	))
@@ -193,8 +200,8 @@ func BuildLogWindow() fyne.Window {
 	logWindow.Hide()
 	return logWindow
 }
-func NewLogError(err error) {
-	LogEntry.Text += time.Now().Format(time.RFC3339) + "\tERROR\t" + err.Error() + "\n"
+func NewLogError(text string, err error) {
+	LogEntry.Text += time.Now().Format(time.RFC3339) + "\tERROR\t" + text + "\t" + err.Error() + "\n"
 }
 func NewLogInfo(text string) {
 	LogEntry.Text += time.Now().Format(time.RFC3339) + "\tINFO\t" + text + "\n"
@@ -231,8 +238,20 @@ func getIntInputBox(name string, fallback int, errorMsg *widget.Label) *widget.E
 	return entry
 }
 
-func checkError(err error) {
+func getSelect(name string, selection []string) *widget.Select {
+	selectEl := widget.NewSelect(selection, func(text string) {
+		MainApp.Preferences().SetString(name, text)
+	})
+	selectEl.SetSelected(MainApp.Preferences().StringWithFallback(name, selection[0]))
+	selectEl.OnChanged = func(text string) {
+		MainApp.Preferences().SetString(name, text)
+		go Start()
+	}
+	return selectEl
+}
+
+func checkError(text string, err error) {
 	if err != nil {
-		NewLogError(err)
+		NewLogError(text, err)
 	}
 }
