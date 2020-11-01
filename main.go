@@ -19,9 +19,9 @@ const (
 
 var (
 	mainApp           = app.NewWithID("com.github.borgmon.go-reddit-wallpaper")
-	sorting           = []string{"top", "hot", "new"}
-	firstOrRandom     = []string{"first", "random"}
-	preferDarker      = []string{"none", "only dark images", "dim images"}
+	sorting           = &options{"top": "Top", "hot": "Hot", "new": "New"}
+	firstOrRandom     = &options{"first": "First", "random": "Random"}
+	preferDarker      = &options{"none": "None", "dark_image": "Only use dark images", "dim_image": "Dim images (post processing)"}
 	buildInSubreddits = "r/wallpaper,r/wallpapers"
 	logWindow         fyne.Window
 	logEntry          *widget.Entry
@@ -238,15 +238,14 @@ func getIntInputBox(name string, fallback int, errorMsg *widget.Label) *widget.E
 	return entry
 }
 
-func getSelect(name string, selection []string) *widget.Select {
-	selectEl := widget.NewSelect(selection, func(text string) {
-		mainApp.Preferences().SetString(name, text)
+func getSelect(name string, selection *options) *widget.Select {
+	selectEl := widget.NewSelect(selection.getNames(), func(text string) {
+		mainApp.Preferences().SetString(name, selection.getValueFromName(text))
 	})
-	selectEl.SetSelected(mainApp.Preferences().StringWithFallback(name, selection[0]))
-	selectEl.OnChanged = func(text string) {
-		mainApp.Preferences().SetString(name, text)
-		go Start()
-	}
+	value := mainApp.Preferences().StringWithFallback(name, selection.getValues()[0])
+	mainApp.Preferences().SetString(name, value)
+	selectEl.SetSelected((*selection)[value])
+
 	return selectEl
 }
 

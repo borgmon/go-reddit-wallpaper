@@ -73,14 +73,14 @@ func Start() {
 
 			if image != nil {
 
-				if savedPreferDarker == "only dark images" || savedPreferDarker == "dim images" {
+				if savedPreferDarker == "dark_image" || savedPreferDarker == "dim_image" {
 					isDark, err := checkDarkImage(image.byteArr)
 					if err != nil {
 						newLogError("check dark image error", err)
 						continue
 					}
 					image.isDark = isDark
-					if !isDark && savedPreferDarker != "dim images" {
+					if !isDark && savedPreferDarker != "dim_image" {
 						newLogInfo("Skip image because it's not dark: " + image.url)
 						continue
 					}
@@ -109,7 +109,7 @@ func Start() {
 		}
 	}
 
-	if savedPreferDarker == "dim images" {
+	if savedPreferDarker == "dim_image" {
 		newLogInfo("Dimming brightness")
 		byteArr, err := dimImage(finalImage.byteArr)
 		if err != nil {
