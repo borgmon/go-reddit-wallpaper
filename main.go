@@ -18,13 +18,13 @@ const (
 )
 
 var (
-	MainApp           = app.NewWithID("com.github.borgmon.go-reddit-wallpaper")
+	mainApp           = app.NewWithID("com.github.borgmon.go-reddit-wallpaper")
 	sorting           = []string{"top", "hot", "new"}
 	firstOrRandom     = []string{"first", "random"}
 	preferDarker      = []string{"none", "only dark images"}
 	buildInSubreddits = "r/wallpaper,r/wallpapers"
 	logWindow         fyne.Window
-	LogEntry          *widget.Entry
+	logEntry          *widget.Entry
 	settingWindow     fyne.Window
 	cronJob           = newCron()
 	trayIconResource  []byte
@@ -32,16 +32,16 @@ var (
 
 func main() {
 	cronJob.Start()
-	SetupIcon()
+	setupIcon()
 	go startTray()
-	logWindow = BuildLogWindow()
-	settingWindow = BuildPrefWindow()
+	logWindow = buildLogWindow()
+	settingWindow = buildPrefWindow()
 	go Start()
-	MainApp.Run()
+	mainApp.Run()
 }
 
-func SetupIcon() {
-	MainApp.SetIcon(PngIconResource)
+func setupIcon() {
+	mainApp.SetIcon(PngIconResource)
 	// windows tray icon issue walk around https://github.com/reujab/wallpaper/pull/15
 	if runtime.GOOS == "windows" {
 		trayIconResource = IcoIconResource.StaticContent
@@ -50,8 +50,8 @@ func SetupIcon() {
 	}
 }
 
-func BuildPrefWindow() fyne.Window {
-	settingWindow := MainApp.NewWindow("Preferences")
+func buildPrefWindow() fyne.Window {
+	settingWindow := mainApp.NewWindow("Preferences")
 	settingWindow.SetIcon(PngIconResource)
 	settingWindow.SetFixedSize(true)
 	settingWindow.CenterOnScreen()
@@ -72,8 +72,8 @@ func BuildPrefWindow() fyne.Window {
 	url, err := url.Parse("https://godoc.org/github.com/robfig/cron")
 	checkError("parse cron doc error", err)
 	intervalLink := widget.NewHyperlink("See example", url)
-	value := MainApp.Preferences().StringWithFallback("interval", "@daily")
-	MainApp.Preferences().SetString("interval", value)
+	value := mainApp.Preferences().StringWithFallback("interval", "@daily")
+	mainApp.Preferences().SetString("interval", value)
 	intervalEntry.SetText(value)
 	intervalEntry.SetPlaceHolder("@daily")
 
@@ -83,7 +83,7 @@ func BuildPrefWindow() fyne.Window {
 			intervalEntryErrorLabel.SetText("Wrong Format")
 		} else {
 			intervalEntryErrorLabel.SetText("")
-			MainApp.Preferences().SetString("interval", text)
+			mainApp.Preferences().SetString("interval", text)
 			_, err := clearAndSetCron(text)
 			checkError("set cron failed", err)
 		}
@@ -96,7 +96,7 @@ func BuildPrefWindow() fyne.Window {
 	perferDarkerSelect := getSelect("prefer_darker", preferDarker)
 
 	autorunCheck := widget.NewCheck("autorun", func(toggle bool) {
-		MainApp.Preferences().SetBool("autorun", toggle)
+		mainApp.Preferences().SetBool("autorun", toggle)
 
 		autoStartApp, err := newAutoRun()
 		checkError("get autostart app failed", err)
@@ -107,13 +107,13 @@ func BuildPrefWindow() fyne.Window {
 		}
 
 	})
-	autorunEnabled := MainApp.Preferences().BoolWithFallback("autorun", false)
+	autorunEnabled := mainApp.Preferences().BoolWithFallback("autorun", false)
 	autorunCheck.SetChecked(autorunEnabled)
 
 	deepscanCheck := widget.NewCheck("deepscan", func(toggle bool) {
-		MainApp.Preferences().SetBool("deepscan", toggle)
+		mainApp.Preferences().SetBool("deepscan", toggle)
 	})
-	deepscanEnabled := MainApp.Preferences().BoolWithFallback("deepscan", false)
+	deepscanEnabled := mainApp.Preferences().BoolWithFallback("deepscan", false)
 	deepscanCheck.SetChecked(deepscanEnabled)
 
 	settingWindow.SetContent(container.NewAdaptiveGrid(2,
@@ -183,8 +183,8 @@ func BuildPrefWindow() fyne.Window {
 
 	return settingWindow
 }
-func BuildLogWindow() fyne.Window {
-	logWindow := MainApp.NewWindow("Logs")
+func buildLogWindow() fyne.Window {
+	logWindow := mainApp.NewWindow("Logs")
 	logWindow.SetIcon(PngIconResource)
 	logWindow.CenterOnScreen()
 	logWindow.Resize(fyne.NewSize(600, 800))
@@ -192,37 +192,37 @@ func BuildLogWindow() fyne.Window {
 		logWindow.Hide()
 	})
 
-	LogEntry = widget.NewMultiLineEntry()
-	LogEntry.Disable()
+	logEntry = widget.NewMultiLineEntry()
+	logEntry.Disable()
 
-	logWindow.SetContent(container.NewScroll(LogEntry))
+	logWindow.SetContent(container.NewScroll(logEntry))
 
 	logWindow.Hide()
 	return logWindow
 }
-func NewLogError(text string, err error) {
-	LogEntry.Text += time.Now().Format(time.RFC3339) + "\tERROR\t" + text + "\t" + err.Error() + "\n"
+func newLogError(text string, err error) {
+	logEntry.Text += time.Now().Format(time.RFC3339) + "\tERROR\t" + text + "\t" + err.Error() + "\n"
 }
-func NewLogInfo(text string) {
-	LogEntry.Text += time.Now().Format(time.RFC3339) + "\tINFO\t" + text + "\n"
+func newLogInfo(text string) {
+	logEntry.Text += time.Now().Format(time.RFC3339) + "\tINFO\t" + text + "\n"
 }
 
 func getStringInputBox(name, fallback string) *widget.Entry {
 	entry := widget.NewEntry()
-	value := MainApp.Preferences().StringWithFallback(name, fallback)
-	MainApp.Preferences().SetString(name, value)
+	value := mainApp.Preferences().StringWithFallback(name, fallback)
+	mainApp.Preferences().SetString(name, value)
 	entry.SetText(value)
 	entry.SetPlaceHolder(fallback)
 	entry.OnChanged = func(text string) {
-		MainApp.Preferences().SetString(name, text)
+		mainApp.Preferences().SetString(name, text)
 	}
 	return entry
 }
 
 func getIntInputBox(name string, fallback int, errorMsg *widget.Label) *widget.Entry {
 	entry := widget.NewEntry()
-	value := MainApp.Preferences().IntWithFallback(name, fallback)
-	MainApp.Preferences().SetInt(name, value)
+	value := mainApp.Preferences().IntWithFallback(name, fallback)
+	mainApp.Preferences().SetInt(name, value)
 	text := strconv.Itoa(value)
 	entry.SetText(text)
 	entry.SetPlaceHolder(text)
@@ -231,7 +231,7 @@ func getIntInputBox(name string, fallback int, errorMsg *widget.Label) *widget.E
 		if err != nil {
 			errorMsg.SetText("Not a number")
 		} else {
-			MainApp.Preferences().SetInt(name, i)
+			mainApp.Preferences().SetInt(name, i)
 			errorMsg.SetText("")
 		}
 	}
@@ -240,11 +240,11 @@ func getIntInputBox(name string, fallback int, errorMsg *widget.Label) *widget.E
 
 func getSelect(name string, selection []string) *widget.Select {
 	selectEl := widget.NewSelect(selection, func(text string) {
-		MainApp.Preferences().SetString(name, text)
+		mainApp.Preferences().SetString(name, text)
 	})
-	selectEl.SetSelected(MainApp.Preferences().StringWithFallback(name, selection[0]))
+	selectEl.SetSelected(mainApp.Preferences().StringWithFallback(name, selection[0]))
 	selectEl.OnChanged = func(text string) {
-		MainApp.Preferences().SetString(name, text)
+		mainApp.Preferences().SetString(name, text)
 		go Start()
 	}
 	return selectEl
@@ -252,6 +252,6 @@ func getSelect(name string, selection []string) *widget.Select {
 
 func checkError(text string, err error) {
 	if err != nil {
-		NewLogError(text, err)
+		newLogError(text, err)
 	}
 }

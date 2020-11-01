@@ -3,8 +3,6 @@ package main
 import (
 	"bytes"
 	"errors"
-	_ "image/jpeg"
-	_ "image/png"
 	"math/rand"
 	"net/http"
 	"strings"
@@ -20,16 +18,16 @@ const (
 )
 
 func Start() {
-	savedSubreddit := MainApp.Preferences().String("subreddits")
+	savedSubreddit := mainApp.Preferences().String("subreddits")
 	savedSubreddit = trimWhiteSpace(savedSubreddit)
-	savedSorting := MainApp.Preferences().String("sorting")
-	savedPreferDarker := MainApp.Preferences().String("prefer_darker")
-	savedDeepscan := MainApp.Preferences().Bool("deepscan")
+	savedSorting := mainApp.Preferences().String("sorting")
+	savedPreferDarker := mainApp.Preferences().String("prefer_darker")
+	savedDeepscan := mainApp.Preferences().Bool("deepscan")
 
 	subreddit := randomElement(strings.Split(savedSubreddit, ","))
 
 	randomIndex, deathCounter := 0, 0
-	if MainApp.Preferences().String("first_or_random") == "random" {
+	if mainApp.Preferences().String("first_or_random") == "random" {
 		rand.Seed(time.Now().UnixNano())
 		randomIndex = rand.Intn(randomMax-1) + 1
 	}
@@ -37,10 +35,10 @@ func Start() {
 	finalImage, lastImage, afterID := "", "", ""
 
 	for finalImage == "" {
-		NewLogInfo("Getting a new page from: " + subreddit + " , afterID=" + afterID)
+		newLogInfo("Getting a new page from: " + subreddit + " , afterID=" + afterID)
 		payload, newAfterID, err := getReddit(subreddit, savedSorting, afterID)
 		if err != nil {
-			NewLogError("cannot get reddit", err)
+			newLogError("cannot get reddit", err)
 			return
 		}
 		afterID = newAfterID
@@ -52,7 +50,7 @@ func Start() {
 				if savedDeepscan {
 					image, byteArr, err = getImageDeepscan(&v)
 					if err != nil {
-						NewLogError("ImageDeepscan error", err)
+						newLogError("ImageDeepscan error", err)
 						continue
 					}
 				} else {
@@ -68,17 +66,17 @@ func Start() {
 					if byteArr == nil {
 						byteArr, err = download(image)
 						if err != nil {
-							NewLogError("download for darker image error", err)
+							newLogError("download for darker image error", err)
 							continue
 						}
 					}
-					isDark, err := CheckDarkImage(byteArr)
+					isDark, err := checkDarkImage(byteArr)
 					if err != nil {
-						NewLogError("check dark image error", err)
+						newLogError("check dark image error", err)
 						continue
 					}
 					if !isDark {
-						NewLogInfo("Skip image because it's not dark: " + image)
+						newLogInfo("Skip image because it's not dark: " + image)
 						continue
 					}
 				}
@@ -101,15 +99,15 @@ func Start() {
 		if lastImage != "" {
 			finalImage = lastImage
 		} else {
-			NewLogError("", errors.New("No image found"))
+			newLogError("", errors.New("No image found"))
 			return
 		}
 	}
 	err := wallpaper.SetFromURL(finalImage)
 	if err != nil {
-		NewLogError("set wallpaper error", err)
+		newLogError("set wallpaper error", err)
 	} else {
-		NewLogInfo("Successfully set wallpaper: " + finalImage)
+		newLogInfo("Successfully set wallpaper: " + finalImage)
 	}
 }
 
@@ -128,8 +126,8 @@ func trimWhiteSpace(text string) string {
 }
 
 func getImage(v *PayloadDataChild) string {
-	minWidth := MainApp.Preferences().Int("min_width")
-	minHeight := MainApp.Preferences().Int("min_height")
+	minWidth := mainApp.Preferences().Int("min_width")
+	minHeight := mainApp.Preferences().Int("min_height")
 	width := v.Data.Preview.Images[0].Source.Width
 	height := v.Data.Preview.Images[0].Source.Height
 	if width >= minWidth && height >= minHeight {
@@ -139,8 +137,8 @@ func getImage(v *PayloadDataChild) string {
 }
 
 func getImageDeepscan(v *PayloadDataChild) (string, []byte, error) {
-	minWidth := MainApp.Preferences().Int("min_width")
-	minHeight := MainApp.Preferences().Int("min_height")
+	minWidth := mainApp.Preferences().Int("min_width")
+	minHeight := mainApp.Preferences().Int("min_height")
 
 	url := v.Data.Url
 

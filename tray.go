@@ -30,7 +30,7 @@ func onReady() {
 	}
 }
 func onExit() {
-	MainApp.Quit()
+	mainApp.Quit()
 }
 
 func startTray() {

@@ -14,7 +14,7 @@ const (
 )
 
 // calculate brightness using RMS of grayscaled picture
-func CheckDarkImage(img []byte) (bool, error) {
+func checkDarkImage(img []byte) (bool, error) {
 	decodedImage, err := imaging.Decode(bytes.NewReader(img))
 	if err != nil {
 		return false, err
