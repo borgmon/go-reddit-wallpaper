@@ -15,7 +15,7 @@ func onReady() {
 		select {
 
 		case <-mRefresh.ClickedCh:
-			go Start()
+			go start()
 
 		case <-mPref.ClickedCh:
 			settingWindow.Show()

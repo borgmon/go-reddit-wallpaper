@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"image"
 	"log"
 	"math"
 
@@ -9,17 +10,14 @@ import (
 )
 
 const (
-	threshold = .45
-	dimLevel  = -10
+	threshold     = .45
+	dimLevel      = -10
+	compressLevel = 90
 )
 
 // calculate brightness using RMS of grayscaled picture
-func checkDarkImage(img []byte) (bool, error) {
-	decodedImage, err := imaging.Decode(bytes.NewReader(img))
-	if err != nil {
-		return false, err
-	}
-	newImage := imaging.Grayscale(decodedImage)
+func checkDarkImage(img image.Image) (bool, error) {
+	newImage := imaging.Grayscale(img)
 	var sum int
 	for i, v := range newImage.Pix {
 		if i%4 == 0 {
@@ -35,25 +33,21 @@ func checkDarkImage(img []byte) (bool, error) {
 	return darkScale < threshold, nil
 }
 
-func dimImage(img []byte) ([]byte, error) {
-	decodedImage, err := imaging.Decode(bytes.NewReader(img))
-	if err != nil {
-		return nil, err
-	}
-	newImage := imaging.AdjustBrightness(decodedImage, dimLevel)
+func dimImage(img image.Image) image.Image {
+	return imaging.AdjustBrightness(img, dimLevel)
+}
+
+func getDimensions(img image.Image) (int, int, error) {
+	return img.Bounds().Dx(), img.Bounds().Dy(), nil
+}
+
+func encodePNG(img image.Image) ([]byte, error) {
+	encodeOption := imaging.JPEGQuality(compressLevel)
 
 	var buf bytes.Buffer
-	err = imaging.Encode(&buf, newImage, imaging.PNG)
+	err := imaging.Encode(&buf, img, imaging.JPEG, encodeOption)
 	if err != nil {
 		log.Fatal(err)
 	}
 	return buf.Bytes(), nil
-}
-
-func getDimensions(img []byte) (int, int, error) {
-	decodedImage, err := imaging.Decode(bytes.NewReader(img))
-	if err != nil {
-		return 0, 0, err
-	}
-	return decodedImage.Bounds().Dx(), decodedImage.Bounds().Dy(), nil
 }

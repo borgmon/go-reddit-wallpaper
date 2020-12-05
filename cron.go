@@ -5,7 +5,7 @@ import "github.com/robfig/cron/v3"
 func clearAndSetCron(text string) (cron.EntryID, error) {
 	clearAllCronJobs()
 	return cronJob.AddFunc(text, func() {
-		go Start()
+		go start()
 	})
 }
 

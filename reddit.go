@@ -6,33 +6,41 @@ import (
 	"net/http"
 )
 
+// RedditPayload json
 type RedditPayload struct {
 	Data PayloadData
 }
 
+// PayloadData json
 type PayloadData struct {
 	Children []PayloadDataChild
 }
 
+// PayloadDataChild json
 type PayloadDataChild struct {
 	Data PayloadDataChildData
 }
 
+// PayloadDataChildData json
 type PayloadDataChildData struct {
 	Preview PayloadDataChildDataPreview
 	Name    string
-	Url     string
+	URL     string
 }
 
+// PayloadDataChildDataPreview json
 type PayloadDataChildDataPreview struct {
 	Images []PayloadDataChildDataPreviewImage
 }
+
+// PayloadDataChildDataPreviewImage json
 type PayloadDataChildDataPreviewImage struct {
 	Source PayloadDataChildDataPreviewImageSource
 }
 
+// PayloadDataChildDataPreviewImageSource json
 type PayloadDataChildDataPreviewImageSource struct {
-	Url    string
+	URL    string
 	Width  int
 	Height int
 }

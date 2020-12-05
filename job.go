@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"errors"
+	"image"
 	"io/ioutil"
 	"math/rand"
 	"net/http"
@@ -10,6 +11,7 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/disintegration/imaging"
 	"github.com/kkyr/wallpaper"
 )
 
@@ -19,12 +21,12 @@ const (
 )
 
 type savedImage struct {
-	url     string
-	byteArr []byte
-	isDark  bool
+	url    string
+	image  image.Image
+	isDark bool
 }
 
-func Start() {
+func start() {
 	savedSubreddit := mainApp.Preferences().String("subreddits")
 	savedSubreddit = trimWhiteSpace(savedSubreddit)
 	savedSorting := mainApp.Preferences().String("sorting")
@@ -74,7 +76,7 @@ func Start() {
 			if image != nil {
 
 				if savedPreferDarker == "dark_image" || savedPreferDarker == "dim_image" {
-					isDark, err := checkDarkImage(image.byteArr)
+					isDark, err := checkDarkImage(image.image)
 					if err != nil {
 						newLogError("check dark image error", err)
 						continue
@@ -111,15 +113,11 @@ func Start() {
 
 	if savedPreferDarker == "dim_image" {
 		newLogInfo("Dimming brightness")
-		byteArr, err := dimImage(finalImage.byteArr)
-		if err != nil {
-			newLogError("check dark image error", err)
-			return
-		}
-		finalImage.byteArr = byteArr
+		image := dimImage(finalImage.image)
+		finalImage.image = image
 	}
 
-	path, err := saveWallperFromByteArray(finalImage.byteArr)
+	path, err := saveWallper(finalImage.image)
 	if err != nil {
 		newLogError("set wallpaper error", err)
 	} else {
@@ -142,8 +140,13 @@ func trimWhiteSpace(text string) string {
 	}, text)
 }
 
-func saveWallperFromByteArray(byteArr []byte) (string, error) {
+func saveWallper(img image.Image) (string, error) {
 	tmpfile, err := ioutil.TempFile("", "go-reddit-wallpaper-temp-")
+	if err != nil {
+		return "", err
+	}
+
+	byteArr, err := encodePNG(img)
 	if err != nil {
 		return "", err
 	}
@@ -166,12 +169,12 @@ func getImage(v *PayloadDataChild) (*savedImage, error) {
 	width := v.Data.Preview.Images[0].Source.Width
 	height := v.Data.Preview.Images[0].Source.Height
 	if width >= minWidth && height >= minHeight {
-		url := fixPreviewUrl(v.Data.Preview.Images[0].Source.Url)
-		byteArr, err := download(url)
+		url := fixPreviewURL(v.Data.Preview.Images[0].Source.URL)
+		image, err := downloadImage(url)
 		if err != nil {
 			return nil, err
 		}
-		return &savedImage{url: url, byteArr: byteArr}, nil
+		return &savedImage{url: url, image: image}, nil
 	}
 	return nil, nil
 }
@@ -180,7 +183,7 @@ func getImageDeepscan(v *PayloadDataChild) (*savedImage, error) {
 	minWidth := mainApp.Preferences().Int("min_width")
 	minHeight := mainApp.Preferences().Int("min_height")
 
-	url := v.Data.Url
+	url := v.Data.URL
 
 	if url == "" {
 		return nil, nil
@@ -190,22 +193,22 @@ func getImageDeepscan(v *PayloadDataChild) (*savedImage, error) {
 		return nil, nil
 	}
 
-	byteArr, err := download(url)
+	image, err := downloadImage(url)
 	if err != nil {
 		return nil, err
 	}
 
-	width, height, err := getDimensions(byteArr)
+	width, height, err := getDimensions(image)
 	if err != nil {
 		return nil, err
 	}
 	if width >= minWidth && height >= minHeight {
-		return &savedImage{url: fixPreviewUrl(url), byteArr: byteArr}, nil
+		return &savedImage{url: fixPreviewURL(url), image: image}, nil
 	}
 	return nil, nil
 }
 
-func download(url string) ([]byte, error) {
+func downloadImage(url string) (image.Image, error) {
 	resp, err := http.Get(url)
 	if err != nil {
 		return nil, err
@@ -213,9 +216,12 @@ func download(url string) ([]byte, error) {
 	defer resp.Body.Close()
 	buf := new(bytes.Buffer)
 	buf.ReadFrom(resp.Body)
-	return buf.Bytes(), nil
+	b := buf.Bytes()
+	decodedImage, err := imaging.Decode(bytes.NewReader(b))
+
+	return decodedImage, err
 }
 
-func fixPreviewUrl(url string) string {
+func fixPreviewURL(url string) string {
 	return strings.Replace(url, "amp;", "", -1)
 }
