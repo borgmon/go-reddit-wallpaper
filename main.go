@@ -14,7 +14,7 @@ import (
 
 const (
 	githubLink = "https://github.com/borgmon/go-reddit-wallpaper"
-	version    = "v1.3"
+	version    = "v1.4"
 )
 
 var (
