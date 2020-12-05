@@ -9,29 +9,29 @@ import (
 	"github.com/ProtonMail/go-autostart"
 )
 
-func getAutorunExec() (error, []string) {
+func getAutorunExec() ([]string, error) {
 	dir, err := os.Executable()
 	if err != nil {
-		return err, nil
+		return nil, err
 	}
 	if runtime.GOOS == "windows" {
-		return nil, []string{dir}
+		return []string{dir}, nil
 	} else if runtime.GOOS == "linux" {
-		return nil, []string{"bash", "-c", dir}
+		return []string{"bash", "-c", dir}, nil
 	} else if runtime.GOOS == "darwin" {
 		fileName := "~/Library/LaunchAgents/me.borgmon.go-reddit-wallpaper.plist"
-		err := ioutil.WriteFile(fileName, PlistResource.StaticContent, 0644)
+		err := ioutil.WriteFile(fileName, plistResource.StaticContent, 0644)
 		if err != nil {
-			return err, nil
+			return nil, err
 		}
-		return nil, []string{"launchctl load " + fileName}
+		return []string{"launchctl load " + fileName}, nil
 	} else {
-		return errors.New("Autorun not implemented"), nil
+		return nil, errors.New("Autorun not implemented")
 	}
 }
 
 func newAutoRun() (*autostart.App, error) {
-	err, exec := getAutorunExec()
+	exec, err := getAutorunExec()
 	if err != nil {
 		return nil, err
 	}

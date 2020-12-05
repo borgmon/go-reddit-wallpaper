@@ -36,23 +36,23 @@ func main() {
 	go startTray()
 	logWindow = buildLogWindow()
 	settingWindow = buildPrefWindow()
-	go Start()
+	go start()
 	mainApp.Run()
 }
 
 func setupIcon() {
-	mainApp.SetIcon(PngIconResource)
+	mainApp.SetIcon(pngIconResource)
 	// windows tray icon issue walk around https://github.com/reujab/wallpaper/pull/15
 	if runtime.GOOS == "windows" {
-		trayIconResource = IcoIconResource.StaticContent
+		trayIconResource = icoIconResource.StaticContent
 	} else {
-		trayIconResource = PngIconResource.StaticContent
+		trayIconResource = pngIconResource.StaticContent
 	}
 }
 
 func buildPrefWindow() fyne.Window {
 	settingWindow := mainApp.NewWindow("Preferences")
-	settingWindow.SetIcon(PngIconResource)
+	settingWindow.SetIcon(pngIconResource)
 	settingWindow.SetFixedSize(true)
 	settingWindow.CenterOnScreen()
 	settingWindow.SetCloseIntercept(func() {
@@ -167,7 +167,7 @@ func buildPrefWindow() fyne.Window {
 
 		widget.NewVBox(widget.NewLabel("version: "+version)),
 		widget.NewVBox(
-			widget.NewButtonWithIcon("Github", GithubPngResource, func() {
+			widget.NewButtonWithIcon("Github", githubPngResource, func() {
 				url, _ := url.Parse("https://github.com/borgmon/go-reddit-wallpaper")
 				err = fyne.CurrentApp().OpenURL(url)
 				checkError("open github url failed", err)
@@ -185,7 +185,7 @@ func buildPrefWindow() fyne.Window {
 }
 func buildLogWindow() fyne.Window {
 	logWindow := mainApp.NewWindow("Logs")
-	logWindow.SetIcon(PngIconResource)
+	logWindow.SetIcon(pngIconResource)
 	logWindow.CenterOnScreen()
 	logWindow.Resize(fyne.NewSize(600, 800))
 	logWindow.SetCloseIntercept(func() {
